@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<extension key="uk.co.mjwconsulting.birthyear" type="module">
+  <file>birthyear</file>
+  <name>Birth Year Custom Field</name>
+  <description>Looks for a custom field with name "birth_year".  When birth_date is updated, birth year will
+be set to year of birth.  If birth_year is updated, birth_date will be cleared.</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>Matthew Wire</author>
+    <email>mjw@mjwconsult.co.uk</email>
+  </maintainer>
+  <urls>
+    <url desc="Support">https://www.mjwconsult.co.uk</url>
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2017-03-06</releaseDate>
+  <version>1.0</version>
+  <develStage>beta</develStage>
+  <compatibility>
+    <ver>4.6,4.7</ver>
+  </compatibility>
+  <comments></comments>
+  <civix>
+    <namespace>CRM/Birthyear</namespace>
+  </civix>
+</extension>
