@@ -133,8 +133,6 @@ function birthyear_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   // fills the custom field with the correct birth year if someone updates CiviCRM's Birth Date field
 
   if ($objectRef instanceof CRM_Contact_DAO_Contact) {
-    //CRM_Core_Error::debug_log_message('op: '.$op.' objectname: '.$objectname.' objectid: '.$objectId.' objectref: '.print_r($objectRef, true));
-
     // Get contact ID birth date field ($params['entity_id'])
     $contactBirthDate = civicrm_api3('Contact', 'get', array(
       'sequential' => 1,
@@ -146,7 +144,6 @@ function birthyear_civicrm_post($op, $objectName, $objectId, &$objectRef) {
       // Get custom birth date value
       // Contact birth date to year
       $contactBirthYear = new DateTime($contactBirthDate['values'][0]['birth_date']);
-      $contactBirthYear->format('Y');
 
       $customBirthYear = civicrm_api3('CustomField', 'get', array(
         'sequential' => 1,
@@ -154,7 +151,6 @@ function birthyear_civicrm_post($op, $objectName, $objectId, &$objectRef) {
       ));
       $birthYearFieldId = $customBirthYear['values'][0]['id'];
       $customValues = civicrm_api3('CustomValue', 'create', array(
-        'debug' => 1,
         'entity_id' => $objectRef->id,
         'custom_'.$birthYearFieldId => $contactBirthYear->format('Y'),
       ));
@@ -205,10 +201,9 @@ function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
           if (($contactBirthYear->format('Y') != $birthYear)
             && ($contactBirthYear->format('y') != $birthYear)
           ) {
-            //CRM_Core_Error::debug_log_message('birth_year not matched');
             //Delete birth_date
             $result = civicrm_api3('Contact', 'create', array(
-              'id' => 203,
+              'id' => $entity['entity_id'],
               'birth_date' => '',
             ));
           }
