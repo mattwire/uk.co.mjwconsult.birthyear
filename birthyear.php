@@ -134,25 +134,21 @@ function birthyear_civicrm_post($op, $objectName, $objectId, &$objectRef) {
 
   if ($objectRef instanceof CRM_Contact_DAO_Contact) {
     // Get contact ID birth date field ($params['entity_id'])
-    $contactBirthDate = civicrm_api3('Contact', 'get', array(
-      'sequential' => 1,
+    $contactBirthDate = civicrm_api3('Contact', 'getsingle', array(
       'return' => "birth_date",
       'id' => $objectRef->id,
     ));
-    if (!empty($contactBirthDate['values'][0]['birth_date'])) {
+
+    if (!empty($contactBirthDate['birth_date'])) {
       // Contact Birth date has a value
       // Get custom birth date value
       // Contact birth date to year
-      $contactBirthYear = new DateTime($contactBirthDate['values'][0]['birth_date']);
+      $contactBirthYear = new DateTime($contactBirthDate['birth_date']);
 
-      $customBirthYear = civicrm_api3('CustomField', 'get', array(
-        'sequential' => 1,
-        'name' => "birth_year",
-      ));
-      $birthYearFieldId = $customBirthYear['values'][0]['id'];
+      $birthYearField = birthyear_get_custom_field();
       $customValues = civicrm_api3('CustomValue', 'create', array(
         'entity_id' => $objectRef->id,
-        'custom_'.$birthYearFieldId => $contactBirthYear->format('Y'),
+        "custom_{$birthYearField['id']}" => $contactBirthYear->format('Y'),
       ));
     }
   }
@@ -170,13 +166,7 @@ function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
 
   foreach ($params as $entity) {
     if ($entity['entity_table'] == 'civicrm_contact') {
-      $customBirthYear = civicrm_api3('CustomField', 'get', array(
-        'sequential' => 1,
-        'name' => "birth_year",
-      ));
-
-      // Are we looking at the birth_year field?
-      $birthYearField = $customBirthYear['values'][0];
+      $birthYearField = birthyear_get_custom_field();
       if (($birthYearField['column_name'] == $entity['column_name'])
         && ($birthYearField['custom_group_id'] == $entity['custom_group_id'])
       ) {
@@ -188,14 +178,13 @@ function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
         $birthYear = $customValues['values'][$birthYearField['id']][0];
 
         // Get contact ID birth date field ($params['entity_id'])
-        $contactBirthDate = civicrm_api3('Contact', 'get', array(
-          'sequential' => 1,
+        $contactBirthDate = civicrm_api3('Contact', 'getsingle', array(
           'return' => "birth_date",
           'id' => $entity['entity_id'],
         ));
         // Contact birth date to year
-        if (!empty($contactBirthDate['values'][0]['birth_date'])) {
-          $contactBirthYear = new DateTime($contactBirthDate['values'][0]['birth_date']);
+        if (!empty($contactBirthDate['birth_date'])) {
+          $contactBirthYear = new DateTime($contactBirthDate['birth_date']);
           // Is birth date = birth year? (Match only long format)
           if ($contactBirthYear->format('Y') != $birthYear) {
             //Delete birth_date
@@ -208,5 +197,20 @@ function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
       }
     }
   }
+}
+
+
+
+/**
+ * Get the birth year custom field
+ */
+$_birthyear_custom_field = NULL; // static, global variable
+function birthyear_get_custom_field() {
+  global $_birthyear_custom_field;
+  if ($_birthyear_custom_field === NULL) {
+    // load custom field data
+    $_birthyear_custom_field = civicrm_api3('CustomField', 'getsingle', array('name' => "birth_year"));
+  }
+  return $_birthyear_custom_field;
 }
 
