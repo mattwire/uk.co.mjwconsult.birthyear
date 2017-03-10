@@ -196,11 +196,8 @@ function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
         // Contact birth date to year
         if (!empty($contactBirthDate['values'][0]['birth_date'])) {
           $contactBirthYear = new DateTime($contactBirthDate['values'][0]['birth_date']);
-          //Is birth date = birth year?
-          // Match on short and long year formats
-          if (($contactBirthYear->format('Y') != $birthYear)
-            && ($contactBirthYear->format('y') != $birthYear)
-          ) {
+          // Is birth date = birth year? (Match only long format)
+          if ($contactBirthYear->format('Y') != $birthYear) {
             //Delete birth_date
             $result = civicrm_api3('Contact', 'create', array(
               'id' => $entity['entity_id'],
