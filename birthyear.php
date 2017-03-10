@@ -133,21 +133,21 @@ function birthyear_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   // fills the custom field with the correct birth year if someone updates CiviCRM's Birth Date field
 
   if ($objectRef instanceof CRM_Contact_DAO_Contact) {
-    // Get contact ID birth date field ($params['entity_id'])
-    $contactBirthDate = civicrm_api3('Contact', 'getsingle', array(
-      'return' => "birth_date",
-      'id' => $objectRef->id,
-    ));
-
-    if (!empty($contactBirthDate['birth_date'])) {
+    if ((!empty($objectRef->birth_date))
+        && ($objectRef->birth_date != 'null')) {
       // Contact Birth date has a value
-      // Get custom birth date value
-      // Contact birth date to year
-      $contactBirthYear = new DateTime($contactBirthDate['birth_date']);
+      try {
+        $contactBirthYear = new DateTime($objectRef->birth_date);
+      }
+      catch (Exception $e) {
+        return;
+      }
 
       $birthYearField = birthyear_get_custom_field();
+      // Update birth year custom field with new value
       $customValues = civicrm_api3('CustomValue', 'create', array(
         'entity_id' => $objectRef->id,
+        // Contact birth date to (long) year
         "custom_{$birthYearField['id']}" => $contactBirthYear->format('Y'),
       ));
     }
@@ -172,19 +172,31 @@ function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
       ) {
         // birth_year field was written
         // Get value of birth_year field
+        // FIXME: Would be better using CustomValue getsingle but it won't select on entity_id,id
         $customValues = civicrm_api3('CustomValue', 'get', array(
           'entity_id' => $entity['entity_id'],
         ));
         $birthYear = $customValues['values'][$birthYearField['id']][0];
 
         // Get contact ID birth date field ($params['entity_id'])
-        $contactBirthDate = civicrm_api3('Contact', 'getsingle', array(
-          'return' => "birth_date",
-          'id' => $entity['entity_id'],
-        ));
+        try {
+          $contactBirthDate = civicrm_api3('Contact', 'getsingle', array(
+            'return' => "birth_date",
+            'id' => $entity['entity_id'],
+          ));
+        }
+        catch (Exception $e) {
+          //getsingle throws exception if not found
+          return;
+        }
         // Contact birth date to year
         if (!empty($contactBirthDate['birth_date'])) {
-          $contactBirthYear = new DateTime($contactBirthDate['birth_date']);
+          try {
+            $contactBirthYear = new DateTime($contactBirthDate['birth_date']);
+          }
+          catch (Exception $e) {
+            return;
+          }
           // Is birth date = birth year? (Match only long format)
           if ($contactBirthYear->format('Y') != $birthYear) {
             //Delete birth_date
