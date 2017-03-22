@@ -172,9 +172,9 @@ function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
       ) {
         // birth_year field was written
         // Get value of birth_year field
-        // FIXME: Would be better using CustomValue getsingle but it won't select on entity_id,id
         $customValues = civicrm_api3('CustomValue', 'get', array(
           'entity_id' => $entity['entity_id'],
+          'return.custom_'.$birthYearField['id'] => 1,
         ));
         $birthYear = $customValues['values'][$birthYearField['id']][0];
 
