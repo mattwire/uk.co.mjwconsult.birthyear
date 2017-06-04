@@ -128,14 +128,14 @@ function _birthyear_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 /**
- * @return CRM_Birthyear_Upgrader
+ * @return CRM_BirthYear_Upgrader
  */
 function _birthyear_civix_upgrader() {
-  if (!file_exists(__DIR__ . '/CRM/Birthyear/Upgrader.php')) {
+  if (!file_exists(__DIR__ . '/CRM/BirthYear/Upgrader.php')) {
     return NULL;
   }
   else {
-    return CRM_Birthyear_Upgrader_Base::instance();
+    return CRM_BirthYear_Upgrader_Base::instance();
   }
 }
 
@@ -190,7 +190,7 @@ function _birthyear_civix_civicrm_managed(&$entities) {
     $es = include $file;
     foreach ($es as $e) {
       if (empty($e['module'])) {
-        $e['module'] = 'uk.co.mjwconsulting.birthyear';
+        $e['module'] = 'uk.co.mjwconsult.birthyear';
       }
       $entities[] = $e;
       if (empty($e['params']['version'])) {
@@ -222,7 +222,7 @@ function _birthyear_civix_civicrm_caseTypes(&$caseTypes) {
       // throw new CRM_Core_Exception($errorMessage);
     }
     $caseTypes[$name] = array(
-      'module' => 'uk.co.mjwconsulting.birthyear',
+      'module' => 'uk.co.mjwconsult.birthyear',
       'name' => $name,
       'file' => $file,
     );
@@ -248,7 +248,7 @@ function _birthyear_civix_civicrm_angularModules(&$angularModules) {
     $name = preg_replace(':\.ang\.php$:', '', basename($file));
     $module = include $file;
     if (empty($module['ext'])) {
-      $module['ext'] = 'uk.co.mjwconsulting.birthyear';
+      $module['ext'] = 'uk.co.mjwconsult.birthyear';
     }
     $angularModules[$name] = $module;
   }

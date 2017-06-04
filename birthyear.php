@@ -1,6 +1,9 @@
 <?php
 
 require_once 'birthyear.civix.php';
+require_once 'CRM/BirthYear/BirthYear.php';
+require_once 'CRM/BirthYear/Utils.php';
+
 
 /**
  * Implements hook_civicrm_config().
@@ -124,94 +127,40 @@ function birthyear_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
 
 /**
  * Implements hook_civicrm_post()
- * @param $op
- * @param $objectName
- * @param $objectId
- * @param $objectRef
  */
 function birthyear_civicrm_post($op, $objectName, $objectId, &$objectRef) {
-  // fills the custom field with the correct birth year if someone updates CiviCRM's Birth Date field
-
-  if ($objectRef instanceof CRM_Contact_DAO_Contact) {
-    if ((!empty($objectRef->birth_date))
-        && ($objectRef->birth_date != 'null')) {
-      // Contact Birth date has a value
-      try {
-        $contactBirthYear = new DateTime($objectRef->birth_date);
-      }
-      catch (Exception $e) {
-        return;
-      }
-
-      $birthYearField = birthyear_get_custom_field();
-      // Update birth year custom field with new value
-      $customValues = civicrm_api3('CustomValue', 'create', array(
-        'entity_id' => $objectRef->id,
-        // Contact birth date to (long) year
-        "custom_{$birthYearField['id']}" => $contactBirthYear->format('Y'),
-      ));
-    }
-  }
+  CRM_BirthYear::process_post($op, $objectName, $objectId, $objectRef);
 }
 
 /**
  * Implements hook_civicrm_custom
- * @param $op
- * @param $groupID
- * @param $entityID
- * @param $params
  */
 function birthyear_civicrm_custom( $op, $groupID, $entityID, &$params ) {
-  // deletes the values CiviCRM's Birth Date field if someone updates the custom field with a year that is contradictory to the birth date
-
-  foreach ($params as $entity) {
-    if ($entity['entity_table'] == 'civicrm_contact') {
-      $birthYearField = birthyear_get_custom_field();
-      if (($birthYearField['column_name'] == $entity['column_name'])
-        && ($birthYearField['custom_group_id'] == $entity['custom_group_id'])
-      ) {
-        // birth_year field was written
-        // Get value of birth_year field
-        $customValues = civicrm_api3('CustomValue', 'get', array(
-          'entity_id' => $entity['entity_id'],
-          'return.custom_'.$birthYearField['id'] => 1,
-        ));
-        $birthYear = $customValues['values'][$birthYearField['id']][0];
-
-        // Get contact ID birth date field ($params['entity_id'])
-        try {
-          $contactBirthDate = civicrm_api3('Contact', 'getsingle', array(
-            'return' => "birth_date",
-            'id' => $entity['entity_id'],
-          ));
-        }
-        catch (Exception $e) {
-          //getsingle throws exception if not found
-          return;
-        }
-        // Contact birth date to year
-        if (!empty($contactBirthDate['birth_date'])) {
-          try {
-            $contactBirthYear = new DateTime($contactBirthDate['birth_date']);
-          }
-          catch (Exception $e) {
-            return;
-          }
-          // Is birth date = birth year? (Match only long format)
-          if ($contactBirthYear->format('Y') != $birthYear) {
-            //Delete birth_date
-            $result = civicrm_api3('Contact', 'create', array(
-              'id' => $entity['entity_id'],
-              'birth_date' => '',
-            ));
-          }
-        }
-      }
-    }
-  }
+  CRM_BirthYear::process_custom($op, $groupID, $entityID, $params);
 }
 
+/**
+ * Implements hook_civicrm_buildForm().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_buildForm
+ */
+function birthyear_civicrm_buildForm($formName, &$form) {
+  // hook in the various renderers
+  CRM_BirthYear::process_buildForm($formName, $form);
+}
 
+/**
+ * implement the hook to customize the summary view
+ */
+function birthyear_civicrm_pageRun( &$page ) {
+  if ($page->getVar('_name') == 'CRM_Contact_Page_View_Summary') {
+    $script = file_get_contents(CRM_Core_Resources::singleton()->getUrl('uk.co.mjwconsult.birthyear', 'js/summary_view.js'));
+    $script = str_replace('EXTENDED_DEMOGRAPHICS', CRM_BirthYear_Utils::getExtendedDemographicsGroupID(), $script);
+    CRM_Core_Region::instance('page-header')->add(array(
+      'script' => $script,
+    ));
+  }
+}
 
 /**
  * Get the birth year custom field
