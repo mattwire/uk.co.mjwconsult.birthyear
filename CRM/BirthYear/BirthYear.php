@@ -57,7 +57,7 @@ class CRM_BirthYear {
     // deletes the values CiviCRM's Birth Date field if someone updates the custom field with a year that is contradictory to the birth date
 
     foreach ($params as $entity) {
-      if ($entity['entity_table'] == 'civicrm_contact') {
+      if (!empty($entity['entity_table']) && $entity['entity_table'] == 'civicrm_contact') {
         $birthYearField = self::getCustomField();
         if (($birthYearField['column_name'] == $entity['column_name'])
           && ($birthYearField['custom_group_id'] == $entity['custom_group_id'])
